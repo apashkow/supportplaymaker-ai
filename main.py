@@ -1,41 +1,42 @@
-from fastapi import FastAPI, Request
-from fastapi.middleware.cors import CORSMiddleware
-import time
+from fastapi import FastAPI
+from pydantic import BaseModel
+from fastapi.staticfiles import StaticFiles
+
 from agent import run_agent
-from stats import parse_log  # ✅ Add this for /stats endpoint
+from stats import router as stats_router
 
 app = FastAPI()
 
-# Allow frontend tools like Postman to connect
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# ✅ Mount frontend at /ui instead of /
+app.mount("/ui", StaticFiles(directory="frontend", html=True), name="frontend")
 
+# ✅ Add /stats endpoint
+app.include_router(stats_router)
+
+# ✅ Define expected input for /chat
+class ChatRequest(BaseModel):
+    user_id: str
+    message: str
+    metadata: dict = {}
+
+# ✅ /chat endpoint with debug-friendly error handler
 @app.post("/chat")
-async def chat(request: Request):
-    body = await request.json()
-    user_id = body.get("user_id")
-    message = body.get("message")
-    metadata = body.get("metadata", {})
+def chat(request: ChatRequest):
+    import time
+    start = time.time()
 
-    start_time = time.time()
-    metadata["latency_ms"] = 0  # Default fallback
+    try:
+        response_text = run_agent(request.user_id, request.message, request.metadata)
+    except Exception as e:
+        import traceback
+        error_msg = traceback.format_exc()
+        print("[ERROR]", error_msg)
+        response_text = f"[ERROR]\n{error_msg}"
 
-    response = run_agent(user_id, message, metadata)
-
-    latency = round((time.time() - start_time) * 1000)
-    metadata["latency_ms"] = latency
+    latency_ms = round((time.time() - start) * 1000)
 
     return {
-        "response": response,
-        "latency_ms": latency,
-        "metadata": metadata
+        "response": response_text,
+        "latency_ms": latency_ms,
+        "metadata": {}
     }
-
-# ✅ Add this new route for live stats
-@app.get("/stats")
-def get_stats():
-    return parse_log()

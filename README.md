@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # SupportPlaymaker.AI
 
 Conversational AI assistant demo for Fanatics-style support workflows.
@@ -24,3 +25,6 @@ POST `/chat`
   "metadata": {}
 }
 ```
+=======
+# supportplaymaker-ai
+>>>>>>> b5d92b1bbfa45c1e1aa914d2061067e3b23505a9
