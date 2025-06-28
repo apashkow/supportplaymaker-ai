@@ -10,7 +10,7 @@ async function sendMessage() {
   chatBox.scrollTop = chatBox.scrollHeight;
 
   // Call the backend
-  const res = await fetch("/chat", {
+  const res = await fetch("https://supportplaymaker.onrender.com/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
