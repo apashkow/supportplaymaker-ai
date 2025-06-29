@@ -14,17 +14,17 @@ formatter = logging.Formatter("[%(asctime)s] %(message)s", "%Y-%m-%d %H:%M:%S")
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
-# ✅ Unified logging function (update main.py to call this)
-def log_interaction(user_id, message, response, metadata=None, latency_ms=None):
-    log_msg = f"User: {user_id}\nMessage: {message}\nResponse: {response}"
-    if metadata:
-        log_msg += f"\nMetadata: {metadata}"
-    if latency_ms:
-        log_msg += f"\nLatency: {latency_ms}ms"
-    log_msg += "\n" + "-" * 40
+# ✅ Updated function to log interaction with full details
+def log_interaction(user_id, message, response, metadata, latency):
+    log_msg = (
+        f"USER: {user_id} | Latency: {latency}ms\n"
+        f"Message: {message}\n"
+        f"Response: {response}\n"
+        f"Metadata: {metadata}\n"
+    )
     logger.info(log_msg)
 
-# ✅ Separate latency-only logging (optional)
+# ✅ Existing latency logging
 def log_latency(latency_ms):
     with open("logs/latency.log", "a") as f:
         f.write(f"{latency_ms}\n")
