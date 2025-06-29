@@ -1,18 +1,15 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <title>SupportPlaymaker.AI Chat</title>
-  <link rel="stylesheet" href="style.css" />
+  <title>Support Chat</title>
+  <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-  <div class="chat-container">
-    <div id="chat-box" class="chat-box"></div>
-    <div class="input-area">
-      <input type="text" id="message-input" placeholder="Ask a support question..." />
-      <button onclick="sendMessage()">Send</button>
-    </div>
-  </div>
-  <script src="chat.js"></script>
+  <div id="chat-box"></div>
+  <form onsubmit="sendMessage(); return false;">
+    <input type="text" id="message-input" placeholder="Ask a support question..." />
+    <button type="submit">Send</button>
+  </form>
+  <script src="/static/chat.js"></script>
 </body>
 </html>
