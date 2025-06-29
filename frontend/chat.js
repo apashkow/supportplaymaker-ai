@@ -1,36 +1,42 @@
-async function sendMessage() {
-  const input = document.getElementById("message-input");
+document.addEventListener("DOMContentLoaded", function () {
   const chatBox = document.getElementById("chat-box");
-  const message = input.value.trim();
-  if (!message) return;
+  const userInput = document.getElementById("user-input");
+  const sendBtn = document.getElementById("send-btn");
 
-  // Display user message
-  chatBox.innerHTML += `<div class="user"><strong>You:</strong> ${message}</div>`;
-  input.value = "";
-  chatBox.scrollTop = chatBox.scrollHeight;
+  sendBtn.addEventListener("click", async function () {
+    const userMessage = userInput.value.trim();
+    if (!userMessage) return;
 
-  // Call the deployed backend
-  try {
-    const res = await fetch("https://supportplaymaker.onrender.com/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        user_id: "demo-user",
-        message,
-        metadata: {}
-      })
-    });
+    appendMessage("You", userMessage);
+    userInput.value = "";
 
-    const data = await res.json();
-    const reply = data.response || "Sorry, something went wrong.";
+    try {
+      const response = await fetch("https://supportplaymaker.onrender.com/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          user_id: "user-001",
+          message: userMessage,
+          metadata: {}
+        })
+      });
 
-    // Display bot reply
-    chatBox.innerHTML += `<div class="bot"><strong>Agent:</strong> ${reply}</div>`;
-    chatBox.scrollTop = chatBox.scrollHeight;
+      if (!response.ok) throw new Error("Server error");
 
-  } catch (err) {
-    console.error("Error contacting backend:", err);
-    chatBox.innerHTML += `<div class="bot"><strong>Agent:</strong> Failed to connect to server.</div>`;
+      const data = await response.json();
+      appendMessage("Agent", data.reply || "No response.");
+    } catch (error) {
+      appendMessage("Agent", "❌ Failed to connect to server.");
+      console.error(error);
+    }
+  });
+
+  function appendMessage(sender, message) {
+    const messageEl = document.createElement("div");
+    messageEl.innerHTML = `<strong>${sender}:</strong> ${message}`;
+    chatBox.appendChild(messageEl);
     chatBox.scrollTop = chatBox.scrollHeight;
   }
-}
+});
