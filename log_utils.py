@@ -22,3 +22,11 @@ def log_interaction(user_id, message, intent, confidence, latency_ms, model_used
         f"Response: {response}\n"
     )
     logger.info(log_msg)
+
+def log_interaction(user_id, message, intent, response):
+    with open("logs/interactions.log", "a") as f:
+        f.write(f"{user_id} | {message} | {intent} | {response}\n")
+
+def log_latency(latency_ms):
+    with open("logs/latency.log", "a") as f:
+        f.write(f"{latency_ms}\n")
