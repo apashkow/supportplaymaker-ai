@@ -1,9 +1,3 @@
-const baseUrl =
-  window.location.hostname.includes("localhost") ||
-  window.location.hostname.includes("127.0.0.1")
-    ? ""
-    : "https://supportplaymaker.onrender.com";
-
 async function sendMessage() {
   const input = document.getElementById("message-input");
   const chatBox = document.getElementById("chat-box");
@@ -15,23 +9,28 @@ async function sendMessage() {
   input.value = "";
   chatBox.scrollTop = chatBox.scrollHeight;
 
+  // Call the deployed backend
   try {
-    const res = await fetch(`${baseUrl}/chat`, {
+    const res = await fetch("https://supportplaymaker.onrender.com/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         user_id: "demo-user",
         message,
-        metadata: {},
-      }),
+        metadata: {}
+      })
     });
 
     const data = await res.json();
     const reply = data.response || "Sorry, something went wrong.";
-    chatBox.innerHTML += `<div class="bot"><strong>Agent:</strong> ${reply}</div>`;
-  } catch (err) {
-    chatBox.innerHTML += `<div class="bot"><strong>Agent:</strong> Failed to connect to server.</div>`;
-  }
 
-  chatBox.scrollTop = chatBox.scrollHeight;
+    // Display bot reply
+    chatBox.innerHTML += `<div class="bot"><strong>Agent:</strong> ${reply}</div>`;
+    chatBox.scrollTop = chatBox.scrollHeight;
+
+  } catch (err) {
+    console.error("Error contacting backend:", err);
+    chatBox.innerHTML += `<div class="bot"><strong>Agent:</strong> Failed to connect to server.</div>`;
+    chatBox.scrollTop = chatBox.scrollHeight;
+  }
 }
