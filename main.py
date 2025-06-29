@@ -1,42 +1,61 @@
-from fastapi import FastAPI
-from pydantic import BaseModel
-from fastapi.staticfiles import StaticFiles
-
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse
 from agent import run_agent
-from stats import router as stats_router
+from stats import parse_log
+import time
+import logging
+import os
 
 app = FastAPI()
 
-# ✅ Mount frontend at /ui instead of /
-app.mount("/ui", StaticFiles(directory="frontend", html=True), name="frontend")
+# Allow CORS from any origin (for local + Render frontend)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-# ✅ Add /stats endpoint
-app.include_router(stats_router)
+# Setup logging
+logging.basicConfig(filename="logs/interactions.log", level=logging.INFO)
 
-# ✅ Define expected input for /chat
-class ChatRequest(BaseModel):
-    user_id: str
-    message: str
-    metadata: dict = {}
-
-# ✅ /chat endpoint with debug-friendly error handler
 @app.post("/chat")
-def chat(request: ChatRequest):
-    import time
-    start = time.time()
+async def chat(req: Request):
+    t0 = time.time()
+    data = await req.json()
+    user_id = data.get("user_id", "unknown")
+    message = data.get("message", "")
+    metadata = data.get("metadata", {})
 
-    try:
-        response_text = run_agent(request.user_id, request.message, request.metadata)
-    except Exception as e:
-        import traceback
-        error_msg = traceback.format_exc()
-        print("[ERROR]", error_msg)
-        response_text = f"[ERROR]\n{error_msg}"
+    response = run_agent(message, user_id, metadata)
+    latency_ms = int((time.time() - t0) * 1000)
 
-    latency_ms = round((time.time() - start) * 1000)
-
-    return {
-        "response": response_text,
+    log_entry = {
+        "user_id": user_id,
+        "message": message,
+        "response": response,
         "latency_ms": latency_ms,
-        "metadata": {}
+        "metadata": metadata,
     }
+    logging.info(log_entry)
+
+    return {"response": response, "latency_ms": latency_ms, "metadata": {}}
+
+@app.get("/stats")
+async def stats():
+    return parse_log()
+
+@app.get("/", response_class=HTMLResponse)
+async def root():
+    with open("frontend/index.html") as f:
+        return HTMLResponse(content=f.read(), status_code=200)
+
+@app.get("/ui/{path:path}")
+async def static_files(path: str):
+    file_path = f"frontend/{path}"
+    if os.path.exists(file_path):
+        with open(file_path, "r") as f:
+            return HTMLResponse(content=f.read())
+    return HTMLResponse(content="Not found", status_code=404)
